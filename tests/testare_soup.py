@@ -90,7 +90,6 @@ def find_element_with_text(url, search_text):
     else:
         print(f"Nu am găsit niciun element care conține textul '{search_text}'.")
 
-
 # Exemplu de utilizare:
 url = "https://ancabota09.wixsite.com/intern/contact"
 search_text = "contact"  # Poți înlocui cu orice alt text
