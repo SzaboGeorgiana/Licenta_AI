@@ -1,12 +1,10 @@
 
 
-from transformers import T5Tokenizer, T5ForConditionalGeneration, Seq2SeqTrainer, Seq2SeqTrainingArguments, \
-    RobertaTokenizer
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, Seq2SeqTrainer, Seq2SeqTrainingArguments
 from datasets import load_dataset
-import sentencepiece
 
 # Încarcă datele de antrenare
-dataset = load_dataset('json', data_files='training_data.json')
+dataset = load_dataset('json', data_files='training_data2.json')
 
 # Împarte dataset-ul în seturi de antrenare și validare
 dataset = dataset['train'].train_test_split(test_size=0.1)
@@ -14,45 +12,34 @@ dataset = dataset['train'].train_test_split(test_size=0.1)
 # Încarcă modelul și tokenizer-ul
 model_name = "Salesforce/codet5-base"
 
-# Înlocuiește T5Tokenizer cu RobertaTokenizer
-tokenizer = RobertaTokenizer.from_pretrained("Salesforce/codet5-base")
-# tokenizer = T5Tokenizer.from_pretrained(model_name)
-model = T5ForConditionalGeneration.from_pretrained(model_name)
+# Folosește AutoTokenizer și AutoModel pentru generalitate
+tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)  # Înlocuiește T5Tokenizer cu AutoTokenizer
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name)  # Înlocuiește T5ForConditionalGeneration cu AutoModel
 
-# # Pre-procesare: tokenizare
-# def preprocess_function(examples):
-#     inputs = [ex for ex in examples['input']]
-#     targets = [ex for ex in examples['output']]
-#     model_inputs = tokenizer(inputs, max_length=512, truncation=True)
-#     labels = tokenizer(targets, max_length=512, truncation=True).input_ids
-#     model_inputs["labels"] = labels
-#     return model_inputs
-
+# Pre-procesare: tokenizare
 def preprocess_function(examples):
     # Tokenizare cu padding și truncation
     model_inputs = tokenizer(
         examples["input"],
         max_length=512,  # Lungimea maximă acceptată de model
         padding="max_length",
-        truncation=True,
-        return_tensors="pt"
+        truncation=True
     )
-    labels = tokenizer(
-        examples["output"],
-        max_length=512,
-        padding="max_length",
-        truncation=True,
-        return_tensors="pt"
-    )["input_ids"]
-    model_inputs["labels"] = labels
+    with tokenizer.as_target_tokenizer():  # Tokenizează output-urile corect
+        labels = tokenizer(
+            examples["output"],
+            max_length=512,
+            padding="max_length",
+            truncation=True
+        )
+    model_inputs["labels"] = labels["input_ids"]
     return model_inputs
-
 
 tokenized_datasets = dataset.map(preprocess_function, batched=True)
 
 # Setări pentru antrenare
 training_args = Seq2SeqTrainingArguments(
-    output_dir="./results",
+    output_dir="../results",
     evaluation_strategy="epoch",
     learning_rate=2e-5,
     per_device_train_batch_size=4,
@@ -62,6 +49,7 @@ training_args = Seq2SeqTrainingArguments(
     num_train_epochs=3,
     predict_with_generate=True,
     fp16=True,  # Folosește FP16 pentru accelerare pe GPU
+    logging_dir='../logs',  # Log-uri TensorBoard
 )
 
 trainer = Seq2SeqTrainer(

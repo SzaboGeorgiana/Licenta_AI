@@ -2,7 +2,7 @@ import pandas as pd
 # Creează o listă de exemple
 import json
 # Citește fișierul Excel
-file_path = 'Hoanță_Roxana-TestCaseCreation.xlsx'
+file_path = '../baze_de_date/excel/set_chat.xlsx'
 df = pd.read_excel(file_path)
 
 # Extrage coloanele care conțin "flow-ul" și "codul"
@@ -47,7 +47,7 @@ for flow, code in zip(flow_list, code_list):
 #         })
 #
 # # Salvează exemplele în format JSON
-# with open('training_data.json', 'w') as json_file:
+# with open('../baze_de_date/json/training_data2.json', 'w') as json_file:
 #     json.dump(examples, json_file, indent=4)
 #
 # print("Datele pentru antrenare au fost salvate în training_data.json")
